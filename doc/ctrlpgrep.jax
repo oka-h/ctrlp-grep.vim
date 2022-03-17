@@ -1,0 +1,177 @@
+*ctrlpgrep.txt*		CtrlPでファイル内検索を行う拡張です。
+
+Author: oka-h
+License: MIT License
+
+==============================================================================
+目次						*ctrlpgrep-contents*
+
+概要					|ctrlpgrep-introduction|
+コマンド				|ctrlpgrep-command|
+設定					|ctrlpgrep-settings|
+  変数					  |ctrlpgrep-variables|
+  カスタム設定の利用例			  |ctrlpgrep-custom-setting-example|
+
+==============================================================================
+概要						*ctrlpgrep-introduction*
+
+*ctrlpgrep.vim* はgrep等のファイル内検索の結果を |CtrlP| によって表示し、選択
+した行をVimで開く拡張プラグインです。
+
+指定されたディレクトリ内を再帰的に検索することを想定しているため、grepを用いた
+他の検索等はできない場合があります。
+
+要件:
+- Vim 8.0.1630+
+
+==============================================================================
+コマンド					*ctrlpgrep-command*
+
+:CtrlPGrep [{dir} [{exts}]]			*:CtrlPGrep*
+	|g:ctrlpgrep#cmd| で指定されたコマンドを用いて {dir} 内のファイルを再
+	帰的に検索します。{dir} が指定されない場合は、現在の作業ディレクトリが
+	対象になります。
+	このコマンドを実行すると、検索パターンを入力するプロンプトが表示されま
+	す。検索結果は |CtrlP| によって表示され、行を選択することによりそのフ
+	ァイルを開くことができます。
+
+	検索パターンには正規表現を指定することができます。ただし、正規表現は使
+	用するコマンドで利用できる形式である必要があります。|search-commands|
+	で利用できる正規表現とは異なる場合があるため、注意してください。
+
+	{exts} が指定された場合、指定された拡張子を条件に検索します。
+	{exts} が "-" から始まる場合、後ろに続く拡張子を検索対象から除外しま
+	す。そうでない場合は、指定した拡張子のみを検索対象とします。
+	また、複数の拡張子を指定することが可能です。"," などの記号で区切って指
+	定してください。
+
+	{exts} が指定されない場合、|g:ctrlpgrep_default_include_extensions| ま
+	たは |g:ctrlpgrep_default_exclude_extensions| を条件に検索します。どち
+	らも設定されている場合は前者が優先され、どちらも設定されていない場合は
+	全ての拡張子が検索対象となります。
+
+==============================================================================
+設定						*ctrlpgrep-settings*
+
+------------------------------------------------------------------------------
+変数						*ctrlpgrep-variables*
+
+g:ctrlpgrep_cmd					*g:ctrlpgrep_cmd*
+	検索に使用するコマンドを設定します。有効な設定は以下の通りです。
+		"grep"		grepを使用します。
+		"ag"		Silver Searcherを使用します。
+		"rg"		ripgrepを使用します。
+		"select-string"	PowerShellのSelect-Stringを使用します。
+		"custom"	カスタム設定を使用します。
+
+	使用するコマンドがコマンドラインで実行できる必要があります。
+	"select-string" を使用する場合、Windows版では "powershell.exe" が、そ
+	れ以外では "pwsh" が実行されます。
+	カスタム設定の使い方については |ctrlpgrep-custom-setting-example| を参
+	考にしてください。
+
+	Windows版のVimの場合は "select-string"、それ以外の場合は "grep" がデ
+	フォルトで設定されます。
+
+g:ctrlpgrep_default_include_extensions
+				*g:ctrlpgrep_default_include_extensions*
+	検索対象とするファイルの拡張子を設定します。設定する値は |string| また
+	は |list| である必要であります。
+	|:CtrlPGrep| において拡張子が指定されている場合、この設定は無視されま
+	す。
+
+	複数の拡張子を指定することができます。|string| で指定する場合、拡張子
+	を "," などの記号で区切ってください。
+
+	デフォルトでは空のリストが設定されます。
+
+g:ctrlpgrep_default_exclude_extensions
+				*g:ctrlpgrep_default_exclude_extensions*
+	検索対象から除外するファイルの拡張子を設定します。設定する値は
+	|string| または |list| である必要であります。
+	|:CtrlPGrep| において拡張子が指定されている場合、または
+	|g:ctrlpgrep_default_include_extensions| が空でない場合、この設定は無視
+	されます。
+
+	複数の拡張子を指定することができます。|string| で指定する場合、拡張子
+	を "," などの記号で区切ってください。
+
+	デフォルトでは空のリストが設定されます。
+
+g:ctrlpgrep_highlight_enable			*g:ctrlpgrep_highlight_enable*
+	1が設定されている場合は、検索結果において検索パターンがハイライトされ
+	て表示されます。ハイライトグループには |hl-Search| が使用されます。Vim
+	で利用できる正規表現と使用するコマンドで利用できる正規表現は異なるた
+	め、正しくハイライトされない場合があります。
+
+	デフォルトでは0が設定されます。
+
+g:Ctrlpgrep_custom_cmd				*g:Ctrlpgrep_custom_cmd*
+	|g:ctrlpgrep_cmd| に "custom" を設定する場合に使用します。
+	検索を行う関数を設定します。引数には以下の値を設定します。
+		pattern			検索パターンの文字列
+		include_extensions	指定された拡張子を検索対象とする場合は
+					1、検索対象から除外する場合は0
+		extensions		検索条件の拡張子のリスト
+
+	返り値は検索結果を設定します。|string| または |list| である必要があり
+	ます。
+
+	この関数の実行時、検索対象のディレクトリがカレントディレクトリに設定さ
+	れています。必要に応じて |getcwd()| を利用してください。
+	詳しい使い方は |ctrlpgrep-custom-setting-example| を参考にしてくださ
+	い。
+
+g:Ctrlpgrep_custom_parse			*g:Ctrlpgrep_custom_parse*
+	|g:ctrlpgrep_cmd| に "custom" を設定する場合に使用します。
+	検索結果から開くファイルの情報を取得する関数を設定します。引数には以下
+	の値を設定します。
+		text			検索結果の文字列
+
+	返り値はファイルについての情報を持つ |Dictionary| とします。辞書には以
+	下のキーと値を設定します。
+		"file"		ファイルのパス
+		"line"		行番号（任意）
+		"col"		桁番号（任意）
+
+	詳しい使い方は |ctrlpgrep-custom-setting-example| を参考にしてくださ
+	い。
+
+------------------------------------------------------------------------------
+カスタム設定の利用例			*ctrlpgrep-custom-setting-example*
+
+ここでは、カスタム設定を利用する設定例を示します。カスタム設定を利用すると、任
+意のコマンドと引数を使用した検索を利用することができます。
+
+設定例では、ripgrepによる検索において対象ディレクトリのみを検索する（再帰的な
+検索を行わない）設定を記載します。
+>
+	let g:ctrlpgrep_cmd = 'custom'
+
+	function! g:Ctrlpgrep_custom_cmd(pattern, include_exts, exts) abort
+	    let l:opt = '--color=never --column --max-depth=1 --no-heading -S'
+
+	    if !empty(a:exts)
+	        let l:opt .= printf('--type-add "target:*.{%s}" -%starget',
+		\   join(a:exts, ','), a:include_exts ? 't' : 'T')
+	    endif
+
+	    return printf('rg %s %s %s', l:opt, s:escape(a:pattern),
+	    \   shellescape(getcwd()))->systemlist()->map({-> trim(v:val)})
+	endfunction
+
+	function! s:escape(text) abort
+	    return a:text->substitute('["\\`]', '\\&', 'g')->printf('"%s"')
+	endfunction
+
+	function! g:Ctrlpgrep_custom_parse(text) abort
+	    let l:match = matchlist(a:text, '^\(.\{-}\):\(\d\+\):\(\d\+\):')
+	    return {
+	    \   'file' : l:match[1],
+	    \   'line' : l:match[2],
+	    \   'col' : l:match[3]
+	    \}
+	endfunction
+<
+==============================================================================
+ vim:tw=78:ts=8:noet:ft=help:norl:
