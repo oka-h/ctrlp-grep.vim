@@ -210,7 +210,7 @@ if has('win32')
     function! s:select_string_cmd(pattern, include_extensions, extensions) abort
         let l:extensions_args = empty(a:extensions) ? '' :
         \   printf('-%s %s', a:include_extensions ? 'include' : 'exclude', join(map(a:extensions, '"*." . v:val'), ','))
-        return map(systemlist(printf('powershell -c "Get-ChildItem -File -r %s | Select-String %s | ForEach-Object { $_.ToString() }"',
+        return map(systemlist(printf('powershell -NoProfile -c "Get-ChildItem -File -r %s | Select-String %s | ForEach-Object { $_.ToString() }"',
         \   l:extensions_args, s:escape_for_select_string(a:pattern))), 'trim(iconv(v:val, "cp932", &encoding))')
     endfunction
 
@@ -229,7 +229,7 @@ else
     function! s:select_string_cmd(pattern, include_extensions, extensions) abort
         let l:extensions_args = empty(a:extensions) ? '' :
         \   printf('-%s %s', a:include_extensions ? 'include' : 'exclude', join(map(a:extensions, '"*." . v:val'), ','))
-        return map(systemlist(printf('pwsh -c "Get-ChildItem -File -r %s | Select-String %s | ForEach-Object { \$_.ToString() }"',
+        return map(systemlist(printf('pwsh -NoProfile -c "Get-ChildItem -File -r %s | Select-String %s | ForEach-Object { \$_.ToString() }"',
         \   l:extensions_args, s:escape_for_select_string(a:pattern))), 'trim(v:val)')
     endfunction
 
